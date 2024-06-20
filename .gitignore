@@ -1,0 +1,17 @@
+.Rproj.user
+.Rhistory
+.Rdata
+.httr-oauth
+.DS_Store
+.quarto
+
+# ignore files in
+.Ruserdata/
+oldscript/
+GTEx/results/
+
+# ignore file
+pie.Rproj
+GTEx/data/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct.gz
+GTEx/data/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt
+GTEx/results/GTEx_expr.rds
