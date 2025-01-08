@@ -6,8 +6,7 @@ library(stringr)
 library(dplyr)
 library(matrixStats)
 
-source("./Rscript/functions.R")
-emb    <- readRDS("./GTEx/results/GTEx_emb_umap.rds")
+emb    <- readRDS("./GTEx/results/GTEx_emb.rds")
 meta   <- readRDS("./GTEx/results/GTEx_meta.rds")
 tcol   <- readRDS("./GTEx/results/GTEx_tcol.rds")
 mapped <- readRDS("./GTEx/results/mapped_genes.rds")
@@ -24,24 +23,26 @@ terms_name  <- terms$name %>% # name of the GO term
   str_remove(" $")
 
 ## Change the 2D coordinates of mapped GO terms into the polar coordinates
-## Divide 12 equally spaced intervals by angle
+# Number of intervals
+k <- 24
+
 nterm <- nrow(terms_pd)
 theta <- rep(0, nterm)
 for(i in 1:nterm) theta[i] <- coord2theta(terms_pd[i,])
-k <- 12
 intv <- cut(theta, breaks=seq(0,2,length.out=k+1), include.lowest = TRUE)
 intv <- match(intv, levels(intv))
 
 ## Find the representative top GO terms for 12 intervals
 term_by_intv <- list()
 for(i in 1:k){
+
   ind = (intv==i)
   intv_name  = terms_name[ind]
   intv_pval  = terms_pval[ind]
   intv_pd    = terms_pd[ind,]
   intv_egene = terms_egene[ind,]
 
-  if (length(intv_name) != 0) {
+  if (length(intv_name) > 1) {
 
     reorder = order(intv_pval, decreasing = FALSE)
     intv_name = intv_name[reorder]
@@ -56,10 +57,8 @@ for(i in 1:k){
            egene = intv_egene)
   }
 }
-saveRDS(term_by_intv, file="./GTEx/results//term_intv.rds")
 
 ## Figure 2A
-term_by_intv <- readRDS("./GTEx/results//term_intv.rds")
 # add sample coordinates
 df_samples <- data.frame(
   x = emb[,1],
@@ -105,7 +104,6 @@ figure_a <-
 figure_a
 
 ## Figure 2B
-k = 12
 select_num = 3
 gene_num <- length(mapped$select)
 theta_gene <- c()
@@ -175,8 +173,8 @@ for(i in 1:length(term_by_intv)) {
 }
 df_func_arrow <-
   data.frame(
-    xstart = rep(0, 9),
-    ystart = rep(0, 9),
+    xstart = rep(0, length(term_by_intv)),
+    ystart = rep(0, length(term_by_intv)),
     xend = arrow_by_intv[,1]*scale_para * 0.9,
     yend = arrow_by_intv[,2]*scale_para * 0.9
   )
@@ -224,4 +222,4 @@ figure_c <-
 figure_c
 
 
-save(figure_a, figure_b, figure_c, file="./GTEx/results/Figure2.rdata")
+

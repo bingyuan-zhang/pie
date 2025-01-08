@@ -2,11 +2,14 @@
 library(data.table)
 library(dplyr)
 library(parallel)
-source("./R/functions.R")
+library(ggplot2)
+source("./Rscript/functions.R")
 
 # Load GTEx dataset and Meta data
-url_gtpm <- "https://storage.googleapis.com/adult-gtex/bulk-gex/v8/rna-seq/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct.gz"
-url_meta_sample <- "https://storage.googleapis.com/adult-gtex/annotations/v8/metadata-files/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt"
+# url_gtpm <- "https://storage.googleapis.com/adult-gtex/bulk-gex/v8/rna-seq/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct.gz"
+# url_meta_sample <- "https://storage.googleapis.com/adult-gtex/annotations/v8/metadata-files/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt"
+url_gtpm <- "./GTEx/data/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct.gz"
+url_meta_sample <- "./GTEx/data/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt"
 gtpm <- fread(url_gtpm, data.table = FALSE)
 meta <- fread(url_meta_sample)
 
@@ -49,23 +52,44 @@ var_rows <- mclapply(1:nrow(gtpm),
 hvg_idx <- (var_rows > quantile(var_rows, 0.75))
 gtpm <- gtpm[hvg_idx, ]
 
-## Obtain the embedding with UMAP
+# apply Dimension Reduction (UMAP / tSNE / LLE / AE)
 gexpr <- t(gtpm)
-set.seed(123)
 pca_res <- RSpectra::svds(gexpr, k = 30)
 pcs_res <- pca_res$u %*% diag(pca_res$d)
-emb <- uwot::umap(pcs_res,
-                  n_components = 2,
-                  n_neighbors=15,
-                  min_dist = 0.5)
-emb <- scale(emb, center = TRUE, scale = FALSE)
-# df <- data.frame(
-#   x = emb[,1],
-#   y = emb[,2],
-#   smts = meta$SMTS
-# )
-# ggplot(df, aes(x=x, y=y, col=smts)) + geom_point(size=1, show.legend = FALSE) + dark_theme_gray()
 
+# UMAP
+res_umap <- uwot::umap(pcs_res,
+                  n_components = 2,
+                  n_neighbors = 15,
+                  min_dist = 0.5,
+                  seed = 123)
+emb_umap <- scale(res_umap, center = TRUE, scale = FALSE)
+
+# tSNE
+set.seed(123)
+res_tsne <- Rtsne::Rtsne(pcs_res,
+                         dim = 2,
+                         pca = FALSE)
+emb_tsne <- scale(res_tsne$Y, center = TRUE, scale = FALSE)
+
+# LLE
+res_lle <- RDRToolbox::LLE(pcs_res, dim = 2, k = 10)
+emb_lle <- scale(res_lle, center = TRUE, scale = FALSE)
+
+# AutoEncoder
+h2o::h2o.init()
+hf <- h2o::as.h2o(pcs_res)
+ae1 <- h2o::h2o.deeplearning(
+  x = seq_along(hf),
+  training_frame = hf,
+  hidden = c(30,10,5,2,5,10,30),
+  autoencoder = TRUE,
+  activation = 'Tanh',
+  seed = 123
+)
+emb_ae <- h2o::h2o.deepfeatures(ae1, hf, layer = 4)
+emb_ae <- as.matrix(emb_ae)
+emb_ae <- scale(emb_ae, center = TRUE, scale = FALSE)
 ################################################################################
 # Replace the tissue subcategory names
 ts_names <- meta$SMTS %>% table %>% names
@@ -171,16 +195,22 @@ tcol <- list(tcolor = tcolor,
 ## reorder the samples by the tissue subcategories
 ind <- order(meta$SMTSD)
 gtpm <- gtpm[, ind]
-emb  <- emb[ind,]
 meta <- meta[ind, ]
+emb_umap <- emb_umap[ind,]
+emb_tsne <- emb_tsne[ind,]
+emb_lle <- emb_lle[ind,]
+emb_ae <- emb_ae[ind,]
 
 ## save files
 saveRDS(t(gtpm), file = "./GTEx/results/GTEx_expr.rds")
-saveRDS(emb, file = "./GTEx/results/GTEx_emb.rds")
 saveRDS(meta, file = "./GTEx/results/GTEx_meta.rds")
 saveRDS(tcol, file = "./GTEx/results/GTEx_tcol.rds")
+saveRDS(emb_umap, file = "./GTEx/results/GTEx_emb_umap.rds")
+saveRDS(emb_tsne, file = "./GTEx/results/GTEx_emb_tsne.rds")
+saveRDS(emb_lle, file = "./GTEx/results/GTEx_emb_lle.rds")
+saveRDS(emb_ae, file = "./GTEx/results/GTEx_emb_ae.rds")
 
 ## Download GO terms (functional gene sets)
-out = "./GTEx/data/GO_Biological_Process.txt"
-url = "https://maayanlab.cloud/Enrichr/geneSetLibrary?mode=text&libraryName=GO_Biological_Process_2023"
-download.file(url, destfile = out)
+# out = "./GTEx/data/GO_Biological_Process.txt"
+# url = "https://maayanlab.cloud/Enrichr/geneSetLibrary?mode=text&libraryName=GO_Biological_Process_2023"
+# download.file(url, destfile = out)
