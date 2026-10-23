@@ -53,16 +53,19 @@ true_f  = terms$name
 
 ## figure 5a
 ov <- lapply(glist, function(x) sum(x%in% mapped$select)) %>% unlist
-n_genes <- ov; n_others <- length(mapped$select) - sum(ov)
-n_genes; n_others
+## figure 5a
+ov <- lapply(glist, function(x) sum(x %in% mapped$select)) %>% unlist  # figure 5b still uses ov
+# a gene can be specific to several tissues, so count unique genes
+n_ts  <- sum(unique(unlist(glist)) %in% mapped$select)
+n_nts <- length(mapped$select) - n_ts
+n_ts; n_nts
 data <- data.frame(
-  tsgenes = c("Others", "Brain", "Muscle", "Esophagus", "Skin", "Adipose"),
-  number = c(n_others, as.numeric(n_genes)),
-  color = c("grey90", "#00C094", "#A58AFF", "#00B6EB", "#FB61D7", "#F8766D")
+  tsgenes = c("Tissue-specific", "Non-tissue-specific"),
+  number  = c(n_ts, n_nts),
+  color   = c("#F8766D", "grey90")
 )
 
 data <- data %>%
-  arrange(-number) %>%
   mutate(tsgenes = factor(tsgenes, levels = tsgenes))
 
 figure_5a <-
@@ -76,7 +79,6 @@ figure_5a <-
   scale_fill_manual(values = data$color) +
   labs(fill = "PIE's mapped genes ", x = "", y = "") +
   theme_void() +
-  guides(fill = guide_legend(reverse = TRUE)) +
   theme(text = element_text(family = "Arial"),
         legend.title = element_text(size = 15),
         legend.text = element_text(size = 15))
@@ -332,7 +334,7 @@ figure_5e <-
   ) +
   labs(y = "Reproducibility ratio of functions",
        x = "Sample proportion") +
-  ylim(c(0.55, 1)) +
+  ylim(c(0.5, 1)) +
   theme(
     text = element_text(family = "Arial"),
     axis.text = element_text(size = 20, color = "black"),

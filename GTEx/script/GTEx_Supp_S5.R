@@ -119,7 +119,7 @@ figure_S5A <- ggplot(df, aes(x = Step, y = Time, fill = Step)) +
 
 runtime_fixed_n_diff_p <- readRDS(file="./GTEx/results/runtime_fixed_n_diff_p.rds")
 df <- data.frame(
-  feature_size = c(1000, 2000, 3000, 4000),
+  feature_size = c(200, 400, 600, 800),
   Step1       = runtime_fixed_n_diff_p[1,],
   Step2       = runtime_fixed_n_diff_p[2,]
 )

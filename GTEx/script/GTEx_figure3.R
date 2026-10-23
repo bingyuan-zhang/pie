@@ -35,7 +35,7 @@ show_label <-
     "Skin",
     "Brain / Muscle",
     "Esophagus / Skin",
-    "Adipos / Blood Vessel / Esophagus / Skin",
+    "Adipose / Blood Vessel / Esophagus / Skin",
     "Blood Vessel / Esophagus"
   )
 

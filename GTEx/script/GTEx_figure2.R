@@ -14,9 +14,7 @@ mapped <- readRDS("./GTEx/results/mapped_genes.rds")
 terms  <- readRDS("./GTEx/results/enriched_terms.rds")
 
 ## Enriched GO terms
-terms <- terms[terms$padj < 0.05]
 terms_pd    <- terms$pd # projected direction (coordinates) of the eigengene
-terms_pval  <- terms$pval # p-value of the GSEA test
 terms_padj  <- terms$padj # adjusted p-value of the GSEA test
 terms_egene <- terms$egene # eigengene vector with length n
 terms_name  <- terms$name %>% # name of the GO term
@@ -160,7 +158,7 @@ df_func_coord <-
   data.frame(
     x = terms_pd[, 1] * scale_para,
     y = terms_pd[, 2] * scale_para,
-    size = -log10(terms_pval) / max(-log10(terms_pval)) * 10
+    size = -log10(terms_padj) / max(-log10(terms_padj)) * 10
   )
 
 # add arrows
@@ -168,7 +166,7 @@ select_num <- 3
 arrow_by_intv <- matrix(0, nrow=length(term_by_intv), ncol=2)
 for(i in 1:length(term_by_intv)) {
   x <- term_by_intv[[i]]
-  if(length(x$pval) == 1) {
+  if(length(x$padj) == 1) {
     arrow_by_intv[i,] <- x$pd
   } else {
     choose = min(select_num, nrow(x$pd))
@@ -225,5 +223,6 @@ figure_c <-
                    max.overlaps = 30)
 figure_c
 
-
 save(figure_a, figure_b, figure_c, file="./GTEx/results/Figure2.rdata")
+
+
