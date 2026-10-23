@@ -3,13 +3,13 @@ library(data.table)
 library(dplyr)
 library(parallel)
 library(ggplot2)
-source("./Rscript/functions.R")
+# source("./Rscript/functions.R")
 
 # Load GTEx dataset and Meta data
-# url_gtpm <- "https://storage.googleapis.com/adult-gtex/bulk-gex/v8/rna-seq/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct.gz"
-# url_meta_sample <- "https://storage.googleapis.com/adult-gtex/annotations/v8/metadata-files/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt"
-url_gtpm <- "./GTEx/data/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct.gz"
-url_meta_sample <- "./GTEx/data/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt"
+url_gtpm <- "https://storage.googleapis.com/adult-gtex/bulk-gex/v8/rna-seq/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct.gz"
+url_meta_sample <- "https://storage.googleapis.com/adult-gtex/annotations/v8/metadata-files/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt"
+# url_gtpm <- "./GTEx/data/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct.gz"
+# url_meta_sample <- "./GTEx/data/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt"
 gtpm <- fread(url_gtpm, data.table = FALSE)
 meta <- fread(url_meta_sample)
 
@@ -47,8 +47,8 @@ gtpm <- gtpm[, mts_idx]
 
 # keep the genes with high variance (top 75%)
 var_rows <- mclapply(1:nrow(gtpm),
-                     function(i) sd(gtpm[i,]),
-                     mc.cores = 10) %>% unlist
+  function(i) sd(gtpm[i,]),
+  mc.cores = 10) %>% unlist
 hvg_idx <- (var_rows > quantile(var_rows, 0.75))
 gtpm <- gtpm[hvg_idx, ]
 
@@ -59,10 +59,10 @@ pcs_res <- pca_res$u %*% diag(pca_res$d)
 
 # UMAP
 res_umap <- uwot::umap(pcs_res,
-                  n_components = 2,
-                  n_neighbors = 15,
-                  min_dist = 0.5,
-                  seed = 123)
+  n_components = 2,
+  n_neighbors = 15,
+  min_dist = 0.5,
+  seed = 123)
 emb_umap <- scale(res_umap, center = TRUE, scale = FALSE)
 
 # tSNE

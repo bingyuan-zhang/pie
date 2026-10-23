@@ -1,14 +1,14 @@
 source("./Rscript/functions.R")
 
 ## Input
-emb <- readRDS(file="./GTEx/results/GTEx_emb.rds") # embedding matrix n*2
+emb <- readRDS(file="./GTEx/results/GTEx_emb_umap.rds") # embedding matrix n*2
 exp <- readRDS(file="./GTEx/results/GTEx_expr.rds") # expression matrix n*p
 gene_sets <- fgsea::gmtPathways("./GTEx/data/GO_Biological_Process_2023.txt")
 
 # Compare the runtime in PIE with fixed n and p.
 runtime <- c("Step1.scmarker"=0, "Step1.map"=0,
              "Step2.svd"=0, "Step2.map"=0, "Step2.gsea"=0)
-
+set.seed(2024) # exclude the randomness introduced by the permutation test
 for(rep in 1:3) {
   ## Step1: filter and map the genes
   inputs <- list(exp = exp, emb = emb)
@@ -19,7 +19,6 @@ for(rep in 1:3) {
 
   ## Step2: identify the enriched function
   inputs <- mapped_res$inputs_enrich_test
-  set.seed(2024) # exclude the randomness introduced by the permutation test
   enrich_res <- EnrichTest(inputs, gene_sets)
 
   runtime["Step2.svd"] = runtime["Step2.svd"] + enrich_res$time_svd
@@ -30,13 +29,14 @@ runtime_fixed_n_and_p <- runtime / 3
 saveRDS(runtime_fixed_n_and_p, file="./GTEx/results/runtime_fixed_n_and_p.rds")
 
 # Compare the runtime with changing n and fixed p
-emb <- readRDS(file="./GTEx/results/GTEx_emb.rds") # embedding matrix n*2
+emb <- readRDS(file="./GTEx/results/GTEx_emb_umap.rds") # embedding matrix n*2
 exp <- readRDS(file="./GTEx/results/GTEx_expr.rds") # expression matrix n*p
 
 runtime <- matrix(0, nrow=2, ncol=4)
 colnames(runtime) <- c("1000", "2000", "3000", "4000")
 rownames(runtime) <- c("step1", "step2")
 sample_size <- c(1000, 2000, 3000, 4000)
+set.seed(2024) # exclude the randomness introduced by the permutation test
 for(i in 1:4) {
   sampled_ind <- sample(nrow(exp), sample_size[i])
   emb_cur <- emb[sampled_ind,]
@@ -52,7 +52,6 @@ for(i in 1:4) {
 
     ## Step2: identify the enriched function
     inputs <- mapped_res$inputs_enrich_test
-    set.seed(2024) # exclude the randomness introduced by the permutation test
     tic <- proc.time()
     enrich_res <- EnrichTest(inputs, gene_sets)
     toc <- proc.time()
@@ -64,13 +63,14 @@ runtime_diff_n_fixed_p <- runtime / 3
 saveRDS(runtime_diff_n_fixed_p, file="./GTEx/results/runtime_diff_n_fixed_p.rds")
 
 # Compare the runtime with fixed n and different p
-emb <- readRDS(file="./GTEx/results/GTEx_emb.rds") # embedding matrix n*2
+emb <- readRDS(file="./GTEx/results/GTEx_emb_umap.rds") # embedding matrix n*2
 exp <- readRDS(file="./GTEx/results/GTEx_expr.rds") # expression matrix n*p
 
 runtime <- matrix(0, nrow=2, ncol=4)
 colnames(runtime) <- c("200", "400", "600", "800")
 rownames(runtime) <- c("step1", "step2")
 feature_size <- c(200, 400, 600, 800)
+set.seed(2024) # exclude the randomness introduced by the permutation test
 for(i in 1:4) {
   sampled_ind <- sample(ncol(exp), feature_size[i])
   exp_cur <- exp[, sampled_ind]
@@ -85,7 +85,6 @@ for(i in 1:4) {
 
     ## Step2: identify the enriched function
     inputs <- mapped_res$inputs_enrich_test
-    set.seed(2024) # exclude the randomness introduced by the permutation test
     tic <- proc.time()
     enrich_res <- EnrichTest(inputs, gene_sets)
     toc <- proc.time()
@@ -108,11 +107,11 @@ df$Time <- runtime_fixed_n_and_p[as.character(df$Step)]
 my_colors <- c(
   "Step1.map"      = "#000080",
   "Step1.scmarker" = "#1E90FF",
-  "Step2.svd"      = "#FFB3B3",  # 浅红
-  "Step2.map"      = "#FF6666",  # 中红
-  "Step2.gsea"     = "#CC0000"   # 深红
+  "Step2.svd"      = "#FFB3B3",  
+  "Step2.map"      = "#FF6666",  
+  "Step2.gsea"     = "#CC0000"   
 )
-ggplot(df, aes(x = Step, y = Time, fill = Step)) +
+figure_S5A <- ggplot(df, aes(x = Step, y = Time, fill = Step)) +
   geom_col() +
   scale_fill_manual(values = my_colors) +
   labs(x = NULL, y = "Second", title = "Runtime of steps") +
@@ -130,7 +129,7 @@ df_long <- tidyr::pivot_longer(
   names_to  = "step",
   values_to = "value"
 )
-ggplot(df_long, aes(x = feature_size, y = value, color = step)) +
+figure_S5B <- ggplot(df_long, aes(x = feature_size, y = value, color = step)) +
   geom_line(linewidth = 1) +
   geom_point(size = 2) +
   scale_color_manual(values = c("Step1" = "blue", "Step2" = "red")) +
@@ -154,7 +153,7 @@ df_long <- tidyr::pivot_longer(
   names_to  = "step",
   values_to = "value"
 )
-ggplot(df_long, aes(x = sample_size, y = value, color = step)) +
+figure_S5C <- ggplot(df_long, aes(x = sample_size, y = value, color = step)) +
   geom_line(linewidth = 1) +
   geom_point(size = 2) +
   scale_color_manual(values = c("Step1" = "blue", "Step2" = "red")) +
@@ -166,3 +165,4 @@ ggplot(df_long, aes(x = sample_size, y = value, color = step)) +
   ) +
   theme_bw(base_size = 14)
 
+figure_S5A;figure_S5B;figure_S5C

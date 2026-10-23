@@ -1,7 +1,7 @@
 source("./Rscript/functions.R")
 
 ## Input
-emb <- readRDS(file="./GTEx/results/GTEx_emb.rds") # embedding matrix n*2
+emb <- readRDS(file="./GTEx/results/GTEx_emb_umap.rds") # embedding matrix n*2
 exp <- readRDS(file="./GTEx/results/GTEx_expr.rds") # expression matrix n*p
 gene_sets <- fgsea::gmtPathways("./GTEx/data/GO_Biological_Process_2023.txt")
 
@@ -30,6 +30,18 @@ for(i in 1:ng){
 # select the top 75% correlated features regrading the embedding
 topid  = which(cor > quantile(cor, ratio, na.rm = TRUE))
 select_pie = obj_scm$marker[topid]
+
+hist(
+  abs(cor[topid]),
+  breaks = 30,
+  col = "steelblue",
+  border = "white",
+  main = "Distribution of Correlation Magnitudes",
+  xlab = "Pearson Correlation",
+  ylab = "Frequency",
+  cex.main = 1.3,
+  cex.lab = 1.2
+)
 
 ## Genes selected by SCMarker
 select_scmarker <- obj_scm$marker

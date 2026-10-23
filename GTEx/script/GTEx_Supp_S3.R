@@ -2,7 +2,7 @@ library(ggplot2)
 library(dplyr)
 
 exp <- readRDS("./GTEx/results/GTEx_expr.rds")
-emb    <- readRDS("./GTEx/results/GTEx_emb.rds")
+emb    <- readRDS("./GTEx/results/GTEx_emb_umap.rds")
 meta   <- readRDS("./GTEx/results/GTEx_meta.rds")
 tcol   <- readRDS("./GTEx/results/GTEx_tcol.rds")
 mapped <- readRDS("./GTEx/results/mapped_genes.rds")
@@ -15,7 +15,6 @@ term_go <- c("GO:0006941", "GO:0099643")
 ind1 <- which(grepl(term_go[1], names(gene_sets)))
 ind2 <- which(grepl(term_go[2], names(gene_sets)))
 gsets <- gene_sets[c(ind1, ind2)]
-
 
 # focus on the five genes
 ShowGenes <- function (gsets, num) {

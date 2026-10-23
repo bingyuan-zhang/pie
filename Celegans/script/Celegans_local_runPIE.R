@@ -1,6 +1,5 @@
 library(dplyr)
-
-source("./R/functions.R")
+source("./Rscript/functions.R")
 
 emb <- readRDS("./Celegans/results/global_emb.rds")
 exp <- readRDS("./Celegans/results/global_exp.rds")

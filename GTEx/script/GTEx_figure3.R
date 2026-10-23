@@ -1,13 +1,14 @@
 library(ggplot2)
 library(dplyr)
 
-emb    <- readRDS("./GTEx/results/GTEx_emb.rds")
+emb    <- readRDS("./GTEx/results/GTEx_emb_umap.rds")
 terms  <- readRDS("./GTEx/results/enriched_terms.rds")
 term_by_intv <- readRDS("./GTEx/results//term_intv.rds")
 
 ## Enriched GO terms
 terms_pd <- terms$pd
 terms_pval <- terms$pval
+terms_padj  <- terms$padj
 terms_egene <- terms$egene
 terms_name <- terms$name %>%
   strsplit(split = "\\(") %>%
@@ -44,7 +45,7 @@ for(m in 1:length(show_name)){
   ind = which(show_name[m] == terms_name)
   egene = terms_egene[ind,]
   name = terms_name[ind]
-  pval = terms_pval[ind]
+  padj = terms_padj[ind]
   pd = terms_pd[ind,]
 
   # color based on the relative scale of the eigengene
@@ -73,8 +74,8 @@ for(m in 1:length(show_name)){
   cur_name <- paste0(
     str_wrap(name, width = width),
     ifelse(nchar(name) > width, "\n(", "\n\n("),
-    "P-value = ",
-    sprintf("%.2e", pval),
+    "Adjusted p-value = ",
+    sprintf("%.2e", padj),
     ")"
   )
   xlab <- paste0(
@@ -107,7 +108,10 @@ for(m in 1:length(show_name)){
   gplots[[m]] <- g
 }
 
-gridExtra::grid.arrange(grobs = gplots[1:4], nrow=1)
-gridExtra::grid.arrange(grobs = gplots[5:8], nrow=1)
+figure_3a <- gridExtra::grid.arrange(grobs = gplots[1:4], nrow=1)
+figure_3b <- gridExtra::grid.arrange(grobs = gplots[5:8], nrow=1)
 
-
+ggsave("./GTEx/figures/Figure_3A.svg",
+  plot = figure_3a, width = 16, height = 5, units = "in", dpi = 600, bg = "black")
+ggsave("./GTEx/figures/Figure_3B.svg",
+       plot = figure_3b, width = 16, height = 5, units = "in", dpi = 600, bg = "black")

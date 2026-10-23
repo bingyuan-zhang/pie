@@ -1,4 +1,4 @@
-source("./R/functions.R")
+source("./Rscript/functions.R")
 
 ## Prepare inputs
 emb <- readRDS("./Celegans/results/global_emb.rds")

@@ -14,8 +14,10 @@ mapped <- readRDS("./GTEx/results/mapped_genes.rds")
 terms  <- readRDS("./GTEx/results/enriched_terms.rds")
 
 ## Enriched GO terms
+terms <- terms[terms$padj < 0.05]
 terms_pd    <- terms$pd # projected direction (coordinates) of the eigengene
 terms_pval  <- terms$pval # p-value of the GSEA test
+terms_padj  <- terms$padj # adjusted p-value of the GSEA test
 terms_egene <- terms$egene # eigengene vector with length n
 terms_name  <- terms$name %>% # name of the GO term
   strsplit(split = "\\(") %>%
@@ -37,21 +39,21 @@ term_by_intv <- list()
 for(i in 1:k){
   ind = (intv==i)
   intv_name  = terms_name[ind]
-  intv_pval  = terms_pval[ind]
+  intv_padj  = terms_padj[ind]
   intv_pd    = terms_pd[ind,]
   intv_egene = terms_egene[ind,]
 
   if (length(intv_name) != 0) {
 
-    reorder = order(intv_pval, decreasing = FALSE)
+    reorder = order(intv_padj, decreasing = FALSE)
     intv_name = intv_name[reorder]
-    intv_pval = intv_pval[reorder]
+    intv_padj = intv_padj[reorder]
     intv_pd = intv_pd[reorder,]
     intv_egene = intv_egene[reorder,]
 
     term_by_intv[[paste("intv", i)]] <-
       list(name  = intv_name,
-           pval  = intv_pval,
+           padj  = intv_padj,
            pd    = intv_pd,
            egene = intv_egene)
   }
@@ -73,7 +75,7 @@ for(i in 1:27){
   lab[i,] <- colMedians(emb[idx,])
 }
 # add sample labels
-df_sample_labels <- data_frame(
+df_sample_labels <- tibble(
   x = lab[,1],
   y = lab[,2],
   label = names(table(meta$SMTSD))
@@ -87,10 +89,10 @@ ggplot_emb_samples <-
              alpha = 5/10,
              size = 0.05) +
   labs( x = "", y = "") +
-  dark_theme_gray() +
   theme(axis.title = element_blank(),
         axis.ticks = element_blank(),
-        axis.text  = element_blank())
+        axis.text  = element_blank()) +
+  dark_theme_gray()
 
 set.seed(2024)
 figure_a <-
@@ -175,8 +177,8 @@ for(i in 1:length(term_by_intv)) {
 }
 df_func_arrow <-
   data.frame(
-    xstart = rep(0, 9),
-    ystart = rep(0, 9),
+    xstart = 0,
+    ystart = 0,
     xend = arrow_by_intv[,1]*scale_para * 0.9,
     yend = arrow_by_intv[,2]*scale_para * 0.9
   )

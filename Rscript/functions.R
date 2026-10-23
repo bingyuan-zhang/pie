@@ -66,7 +66,6 @@ EnrichTest <- function(inputs, gene_sets){
   gs_name = names(gene_sets)
 
   # parameters
-  p_thres  = 0.05
   min_olap = 3
   max_olap = 300
   remind   = 500
@@ -136,9 +135,13 @@ EnrichTest <- function(inputs, gene_sets){
     }
   }
 
-  ind   = (term_pval < p_thres)
+  padj_thres <- 0.05
+  term_padj  = p.adjust(term_pval, method = "BH")
+  ind   = (term_padj < padj_thres)
+  
   name  = term_name[ind]
   pval  = term_pval[ind]
+  padj  = term_padj[ind]
   nes   = term_nes[ind]
   pd    = t(term_pd)[ind,]
   egene = t(term_egene)[ind,]
@@ -147,6 +150,7 @@ EnrichTest <- function(inputs, gene_sets){
     name = name,
     pd = pd,
     pval = pval,
+    padj = padj,
     nes = nes,
     egene = egene,
     time_svd = time_svd,

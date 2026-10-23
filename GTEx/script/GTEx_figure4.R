@@ -2,10 +2,8 @@ library(ComplexHeatmap)
 library(dplyr)
 library(corrplot)
 
-emb    <- readRDS("./GTEx/results/GTEx_emb.rds")
 meta   <- readRDS("./GTEx/results/GTEx_meta.rds")
 tcol   <- readRDS("./GTEx/results/GTEx_tcol.rds")
-terms  <- readRDS("./GTEx/results/enriched_terms.rds")
 term_by_intv <- readRDS("./GTEx/results//term_intv.rds")
 
 ## Heatmap
@@ -78,15 +76,8 @@ draw(figure_heatmap, padding = unit(c(2, 2, 2, 2), "cm"))
 ################################################################################
 Mcor <- cor(t(egenesmat))
 par(family = "ArialMT")
-corrplot(
-  Mcor,
-  method = 'square',
-  order = 'hclust',
-  cl.pos = 'b',
-  tl.pos = 'l',
-  tl.col = 'black',
-  tl.cex = 1
-)
+corrplot(Mcor, method = 'square', order = 'hclust', cl.pos = 'b',
+  tl.pos = 'l', tl.col = 'black', tl.cex = 1)
 
 
 

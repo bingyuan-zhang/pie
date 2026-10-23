@@ -34,13 +34,13 @@ cds <- align_cds(cds,
 preprocess_mat <- SingleCellExperiment::reducedDims(cds)[["Aligned"]]
 
 ## Dimension Reduction with UMAP
+set.seed(2024)
 umap_model <- uwot::umap(as.matrix(preprocess_mat),
                          n_components = 2,
                          metric = "cosine",
                          n_neighbors = 15,
                          min_dist = 0.5,
                          ret_model = TRUE)
-set.seed(2024)
 umap_res <- uwot::umap_transform(X=as.matrix(preprocess_mat), model=umap_model, n_threads=1)
 emb <- scale(umap_res, center = TRUE, scale = FALSE)
 
@@ -57,9 +57,9 @@ saveRDS(exp, file = "./Celegans/results/global_exp.rds")
 saveRDS(cell_meta, file = "./Celegans/results/global_meta.rds")
 
 ## Download functional gene sets
-out = "./Celegans/data/GO_Biological_Process_2018.txt"
-url = "https://maayanlab.cloud/WormEnrichr/geneSetLibrary?mode=text&libraryName=GO_Biological_Process_2018"
-download.file(url, destfile = out)
+# out = "./Celegans/data/GO_Biological_Process_2018.txt"
+# url = "https://maayanlab.cloud/WormEnrichr/geneSetLibrary?mode=text&libraryName=GO_Biological_Process_2018"
+# download.file(url, destfile = out)
 
 
 

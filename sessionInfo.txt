@@ -1,0 +1,75 @@
+R version 4.4.0 (2024-04-24)
+Platform: x86_64-pc-linux-gnu
+Running under: Ubuntu 22.04.2 LTS
+
+Matrix products: default
+BLAS:   /opt/R/4.4.0/lib/R/lib/libRblas.so 
+LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.10.0
+
+locale:
+ [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+ [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+ [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+ [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+
+time zone: Asia/Tokyo
+tzcode source: system (glibc)
+
+attached base packages:
+[1] grid      stats     graphics  grDevices utils    
+[6] datasets  methods   base     
+
+other attached packages:
+ [1] VennDiagram_1.7.3     futile.logger_1.4.3  
+ [3] enrichR_3.2           readr_2.1.5          
+ [5] corrplot_0.92         ComplexHeatmap_2.20.0
+ [7] cowplot_1.1.3         fgsea_1.30.0         
+ [9] SCMarker_2.0          matrixStats_1.3.0    
+[11] dplyr_1.1.4           stringr_1.5.1        
+[13] purrr_1.0.2           ggdark_0.2.1         
+[15] ggrepel_0.9.5         ggplot2_3.5.2        
+[17] usethis_2.2.3        
+
+loaded via a namespace (and not attached):
+ [1] tidyselect_1.2.1     farver_2.1.2        
+ [3] digest_0.6.35        lifecycle_1.0.4     
+ [5] cluster_2.1.6        Cairo_1.6-2         
+ [7] magrittr_2.0.3       compiler_4.4.0      
+ [9] rlang_1.1.3          tools_4.4.0         
+[11] utf8_1.2.4           data.table_1.15.4   
+[13] lambda.r_1.2.4       FNN_1.1.4           
+[15] labeling_0.4.3       bit_4.0.5           
+[17] curl_5.2.1           RColorBrewer_1.1-3  
+[19] rsconnect_1.2.2      BiocParallel_1.38.0 
+[21] withr_3.0.0          BiocGenerics_0.50.0 
+[23] pcaPP_2.0-4          stats4_4.4.0        
+[25] fansi_1.0.6          colorspace_2.1-0    
+[27] scales_1.4.0         iterators_1.0.14    
+[29] dichromat_2.0-0.1    cli_3.6.2           
+[31] mvtnorm_1.2-5        crayon_1.5.2        
+[33] ragg_1.5.0           generics_0.1.3      
+[35] rstudioapi_0.16.0    robustbase_0.99-2   
+[37] RSpectra_0.16-1      httr_1.4.7          
+[39] tzdb_0.4.0           rjson_0.2.21        
+[41] parallel_4.4.0       formatR_1.14        
+[43] WriteXLS_6.6.0       vctrs_0.6.5         
+[45] Matrix_1.7-0         IRanges_2.38.0      
+[47] GetoptLong_1.0.5     hms_1.1.3           
+[49] S4Vectors_0.42.0     bit64_4.0.5         
+[51] clue_0.3-65          systemfonts_1.3.1   
+[53] foreach_1.5.2        tidyr_1.3.1         
+[55] glue_1.7.0           DEoptimR_1.1-3      
+[57] codetools_0.2-20     uwot_0.2.2          
+[59] RcppAnnoy_0.0.22     stringi_1.8.4       
+[61] shape_1.4.6.1        gtable_0.3.6        
+[63] ccaPP_0.3.3          tibble_3.2.1        
+[65] pillar_1.9.0         circlize_0.4.16     
+[67] R6_2.5.1             textshaping_1.0.3   
+[69] doParallel_1.0.17    vroom_1.6.5         
+[71] lattice_0.22-6       futile.options_1.0.1
+[73] png_0.1-8            Rcpp_1.0.12         
+[75] fastmatch_1.1-4      svglite_2.1.3       
+[77] gridExtra_2.3        fs_1.6.4            
+[79] pkgconfig_2.0.3      GlobalOptions_0.1.2 

@@ -5,13 +5,13 @@ library(purrr)
 library(stringr)
 library(dplyr)
 
-source("./R/functions.R")
+source("./Rscript/functions.R")
 
 ## Find representative terms
 # enriched GO terms
 terms <- readRDS("./Celegans/results/global_enriched_terms.rds")
 terms_pd <- terms$pd
-terms_pval <- terms$pval
+terms_padj <- terms$padj
 terms_egene <- terms$egene
 terms_name <- gsub(" \\(GO:[0-9]+\\)", "", terms$name)
 terms_id <- sub(".*\\(GO:([0-9]+)\\)", "GO:\\1", terms$name)
@@ -25,22 +25,22 @@ intv <- match(intv, levels(intv))
 term_by_intv <- list()
 for(i in 1:k){
   cur_name  <- terms_name[intv==i]
-  cur_pval  <- terms_pval[intv==i]
+  cur_padj  <- terms_padj[intv==i]
   cur_pd    <- terms_pd[intv==i,]
   cur_egene <- terms_egene[intv==i,]
-  if(length(cur_pval) == 0) {
+  if(length(cur_padj) == 0) {
     next
-  } else if(length(cur_pval) > 1){
-    idx <- order(cur_pval, decreasing = FALSE)
+  } else if(length(cur_padj) > 1){
+    idx <- order(cur_padj, decreasing = FALSE)
     term_by_intv[[i]] <-
       list(name = cur_name[idx],
-           pval = cur_pval[idx],
+           padj = cur_padj[idx],
            pd = cur_pd[idx,],
            egene = cur_egene[idx,])
   } else {
     term_by_intv[[i]] <-
       list(name = cur_name,
-           pval = cur_pval,
+           padj = cur_padj,
            pd = cur_pd,
            egene = cur_egene)
   }
@@ -88,13 +88,12 @@ figure_6A <-
                   aes(x = x,
                       y = y,
                       label = label),
-                  size = 18/2.854,
+                  size = 12/2.854,
                   max.overlaps = 50) +
   dark_theme_grey() +
   theme(axis.text = element_blank(),
         axis.title = element_blank(),
         axis.ticks = element_blank())
-
 figure_6A
 
 ## figure 6B
@@ -102,7 +101,7 @@ scale_para <- (max(df_emb$x) - min(df_emb$x)) / 2
 df_mapped_func <- data.frame(
   x = terms_pd[,1]*scale_para,
   y = terms_pd[,2]*scale_para,
-  size = -log10(terms_pval)/ max(-log10(terms_pval)) * 7
+  size = -log10(terms_padj)/ max(-log10(terms_padj)) * 7
 )
 # mapped arrows
 select_num <- 3
@@ -128,20 +127,19 @@ df_arrow_func <- data.frame(
 )
 # mapped labels
 df_lab <- data.frame()
-j = 0
+j = 0; 
 for(i in 1:k){
   if(is.null(term_by_intv[[i]])) next
   j = j + 1
-  num <- min(select_num, length(term_by_intv[[i]]$pval))
+  num <- min(select_num, length(term_by_intv[[i]]$padj))
   label <- term_by_intv[[i]]$name[1:num]
   xend <- rep(Arrows[j,1]*1.7*scale_para, num)
   yend <- rep(Arrows[j,2]*1.7*scale_para, num)
-  col <- rep(color[i], num)
 
-  df_lab <- rbind(df_lab, data.frame(x=xend, y=yend, label=label, col=col))
+  df_lab <- rbind(df_lab, data.frame(x=xend, y=yend, label=label))
 }
 
-set.seed(2024)
+set.seed(2026)
 figure_6B <- ggplot() +
   geom_point(data = df_emb,
              aes(x = x,
@@ -160,28 +158,27 @@ figure_6B <- ggplot() +
                              xend = xend,
                              yend = yend),
                arrow = arrow(length = unit(0.05, "npc")),
-               size = 1.5,
+               size = 0.9,
                color = alpha("white", 0.8),
                show.legend = FALSE) +
   geom_label_repel(data = df_lab,
-                   aes(label=str_wrap(label, 18),
+                   aes(label=str_wrap(label, 20),
                        x = x,
                        y = y),
                    family = "Arial",
-                   box.padding = 0.1,
+                   box.padding = 0.2,
                    segment.size = 0,
-                   force_pull = 0.13,
-                   force = 0.15,
-                   size = 13/2.854,
+                   force_pull = 0.1,
+                   force = 0.2,
+                   size = 10/2.854,
                    color="white",
                    fill = alpha("white",0),
-                   max.overlaps = 40) +
+                   max.overlaps = 10) +
   dark_theme_gray() +
   labs(x = "", y = "") +
   theme(axis.text = element_blank(),
         axis.title = element_blank(),
         axis.ticks = element_blank())
-
 figure_6B
 
 ## figure 6C
@@ -191,7 +188,7 @@ gsets <- fgsea::gmtPathways("./Celegans/data/GO_Biological_Process_2018.txt")
 
 show.term <- function(ind) {
   name <- terms_name[ind]
-  pval <- terms_pval[ind]
+  padj <- terms_padj[ind]
   id_gmt <- grep(terms_id[ind], names(gsets))
   idx <- which(colnames(exp) %in% gsets[[id_gmt]] & colnames(exp) %in% mapped$select)
   ovlp_g <- colnames(exp)[idx]
@@ -225,8 +222,8 @@ show.term <- function(ind) {
   cur_name <- paste0(
     str_wrap(name, width = width),
     ifelse(nchar(name) > width, "\n(", "\n\n("),
-    "P-value = ",
-    sprintf("%.2e", pval),
+    "Adjusted P-value = ",
+    sprintf("%.2e", padj),
     ")"
   )
 
@@ -235,7 +232,7 @@ show.term <- function(ind) {
                aes(x = x,
                    y = y),
                colour = alpha(module_color, 0.7),
-               size = 0.1) +
+               size = 0.05) +
     geom_segment(data = df_arrow,
                  mapping = aes(x = xstart,
                                y = ystart,
@@ -244,14 +241,14 @@ show.term <- function(ind) {
                  color = "white",
                  arrow = arrow(length = unit(0.05, "npc")),
                  show.legend = FALSE,
-                 size = 1.5) +
+                 size = 1) +
     ggtitle(cur_name) +
     labs(x = "AFD branch", y = "") +
     dark_theme_gray() +
     theme(axis.text = element_blank(),
           axis.ticks = element_blank(),
-          axis.title = element_text(size = 20),
-          title = element_text(size = 18))
+          axis.title = element_text(size = 10),
+          title = element_text(size = 10))
   g
   res <- list(g = g, overlap_gname = ovlp_g)
   return(res)
@@ -280,13 +277,13 @@ show.gene <- function(name){
                aes(x = x,
                    y = y),
                color = alpha(module_color, 0.7),
-               size = 0.1) +
+               size = 0.05) +
     ggtitle(name) +
     labs(x = "", y = "") +
     dark_theme_gray() +
     theme(axis.text = element_blank(),
           axis.ticks = element_blank(),
-          title = element_text(size = 17))
+          title = element_text(size = 10))
   g
 }
 
@@ -299,6 +296,18 @@ for(i in 1:length(res$overlap_gname)){
 figure_6D <- gridExtra::grid.arrange(grobs = glist, nrow=2)
 figure_6D
 
+outdir <- "./Celegans/figures/"
+ggsave(file.path(outdir, "Figure_6A.svg"),
+  plot = figure_6A, width = 3.5, height = 3.5, units = "in", dpi = 600, bg = "black")
+
+ggsave(file.path(outdir, "Figure_6B.svg"),
+  plot = figure_6B, width = 7, height = 7, units = "in", dpi = 600, bg = "black")
+
+ggsave(file.path(outdir, "Figure_6C.svg"),
+  plot = figure_6C, width = 3.5, height = 3.5,units = "in", dpi = 600, bg = "black")
+
+ggsave(file.path(outdir, "Figure_6D.svg"), plot = figure_6D,
+  width = 10, height = 4.5, units = "in", dpi = 600, bg = "black")
 
 
 

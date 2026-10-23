@@ -4,13 +4,13 @@ library(ggdark)
 library(purrr)
 library(stringr)
 
-source("./R/functions.R")
+source("./Rscript//functions.R")
 gsets <- fgsea::gmtPathways("./Celegans/data/GO_Biological_Process_2018.txt")
 
 ## enriched global GO terms
 terms_local <- readRDS("./Celegans/results/local_enriched_terms.rds")
 terms_local_pd <- terms_local$pd
-terms_local_pval <- terms_local$pval
+terms_local_padj <- terms_local$padj
 terms_local_egene <- terms_local$egene
 terms_local_name <- gsub(" \\(GO:[0-9]+\\)", "", terms_local$name)
 terms_local_id <- sub(".*\\(GO:([0-9]+)\\)", "GO:\\1", terms_local$name)
@@ -22,7 +22,7 @@ mapped_local <- readRDS("./Celegans/results/local_mapped_genes.rds")
 ## enriched local GO terms
 terms_global <- readRDS("./Celegans/results/global_enriched_terms.rds")
 terms_global_pd <- terms_global$pd
-terms_global_pval <- terms_global$pval
+terms_global_padj <- terms_global$padj
 terms_global_egene <- terms_global$egene
 terms_global_name <- gsub(" \\(GO:[0-9]+\\)", "", terms_global$name)
 terms_global_id <- sub(".*\\(GO:([0-9]+)\\)", "GO:\\1", terms_global$name)
@@ -41,22 +41,22 @@ intv <- match(intv, levels(intv))
 term_by_intv_local <- list()
 for(i in 1:k){
   cur_name  <- terms_local_name[intv==i]
-  cur_pval  <- terms_local_pval[intv==i]
+  cur_padj  <- terms_local_padj[intv==i]
   cur_pd    <- terms_local_pd[intv==i,]
   cur_egene <- terms_local_egene[intv==i,]
-  if(length(cur_pval) == 0) {
+  if(length(cur_padj) == 0) {
     next
-  } else if(length(cur_pval) > 1){
-    idx <- order(cur_pval, decreasing = FALSE)
+  } else if(length(cur_padj) > 1){
+    idx <- order(cur_padj, decreasing = FALSE)
     term_by_intv_local[[i]] <-
       list(name = cur_name[idx],
-           pval = cur_pval[idx],
+           padj = cur_padj[idx],
            pd = cur_pd[idx,],
            egene = cur_egene[idx,])
   } else {
     term_by_intv_local[[i]] <-
       list(name = cur_name,
-           pval = cur_pval,
+           padj = cur_padj,
            pd = cur_pd,
            egene = cur_egene)
   }
@@ -97,14 +97,14 @@ scale_para <- (max(df_emb_local$x) - min(df_emb_local$x)) / 1.5
 df_mapped_func_local <- data.frame(
   x = terms_local_pd[,1]*scale_para,
   y = terms_local_pd[,2]*scale_para,
-  size = -log10(terms_local_pval)/ max(-log10(terms_local_pval)) * 7
+  size = -log10(terms_local_padj)/ max(-log10(terms_local_padj)) * 7
 )
 # mapped arrows
 select_num <- 3
 Arrows <- c()
 for(i in 1:k){
   # print(i)
-  pds <- term_by_intv[[i]]$pd
+  pds <- term_by_intv_local[[i]]$pd
   num <- min(select_num, nrow(pds))
   if(length(pds) < 2) {
     next
@@ -128,7 +128,7 @@ j = 0
 for(i in 1:k){
   if(is.null(term_by_intv_local[[i]])) next
   j = j + 1
-  num <- min(select_num, length(term_by_intv_local[[i]]$pval))
+  num <- min(select_num, length(term_by_intv_local[[i]]$padj))
   label <- term_by_intv_local[[i]]$name[1:num]
   xend <- rep(Arrows[j,1]*1.5*scale_para, num)
   yend <- rep(Arrows[j,2]*1.5*scale_para, num)
@@ -144,7 +144,7 @@ figure_7A <- ggplot() +
              col = df_emb_local$cell_col,
              alpha = 0.6,
              show.legend = FALSE,
-             size = 0.7) +
+             size = 0.3) +
   geom_text_repel(data = df_emb_local_text,
                   family = "Arial",
                   aes(x = x, y = y, label = label),
@@ -167,11 +167,11 @@ figure_7A <- ggplot() +
                        x = x,
                        y = y),
                    family = "Arial",
-                   box.padding = 0.1,
+                   box.padding = 0.15,
                    segment.size = 0,
                    force_pull = 0.1,
                    force = 0.15,
-                   size = 13/2.854,
+                   size = 10/2.854,
                    color="white",
                    fill = alpha("white",0),
                    max.overlaps = 40) +
@@ -186,7 +186,7 @@ figure_7A
 ## figure 7B
 show.term.global <- function(ind) {
   name <- terms_global_name[ind]
-  pval <- terms_global_pval[ind]
+  padj <- terms_global_padj[ind]
   id_gmt <- grep(terms_global_id[ind], names(gsets))
   idx <- which(colnames(exp_global) %in% gsets[[id_gmt]] &
                  colnames(exp_global) %in% mapped_global$select)
@@ -221,8 +221,8 @@ show.term.global <- function(ind) {
   cur_name <- paste0(
     str_wrap(name, width = width),
     ifelse(nchar(name) > width, "\n(", "\n\n("),
-    "P-value = ",
-    sprintf("%.2e", pval),
+    "Adjusted P-value = ",
+    sprintf("%.2e", padj),
     ")"
   )
 
@@ -231,23 +231,23 @@ show.term.global <- function(ind) {
                aes(x = x,
                    y = y),
                colour = alpha(module_color, 0.5),
-               size = 0.5) +
+               size = 0.3) +
     geom_segment(data = df_arrow,
                  mapping = aes(x = xstart,
                                y = ystart,
                                xend = xend,
                                yend = yend),
                  color = "white",
-                 arrow = arrow(length = unit(0.05, "npc")),
+                 arrow = arrow(length = unit(0.03, "npc")),
                  show.legend = FALSE,
-                 size = 1.5) +
+                 size = 1) +
     ggtitle(cur_name) +
     labs(x = "Global View", y = "") +
     dark_theme_gray() +
     theme(axis.text = element_blank(),
           axis.ticks = element_blank(),
-          axis.title = element_text(size = 20),
-          title = element_text(size = 18))
+          axis.title = element_text(size = 10),
+          title = element_text(size = 9))
   g
   res <- list(g = g, overlap_gname = ovlp_g)
   return(res)
@@ -255,7 +255,7 @@ show.term.global <- function(ind) {
 
 show.term.local <- function(ind){
   name <- terms_local_name[ind]
-  pval <- terms_local_pval[ind]
+  padj <- terms_local_padj[ind]
   id_gmt <- grep(terms_local_id[ind], names(gsets))
   idx <- which(colnames(exp_local) %in% gsets[[id_gmt]] &
                  colnames(exp_local) %in% mapped_local$select)
@@ -290,8 +290,8 @@ show.term.local <- function(ind){
   cur_name <- paste0(
     str_wrap(name, width = width),
     ifelse(nchar(name) > width, "\n(", "\n\n("),
-    "P-value = ",
-    sprintf("%.2e", pval),
+    "Adjusted P-value = ",
+    sprintf("%.2e", padj),
     ")"
   )
 
@@ -300,23 +300,23 @@ show.term.local <- function(ind){
                aes(x = x,
                    y = y),
                colour = alpha(module_color, 0.5),
-               size = 0.5) +
+               size = 0.3) +
     geom_segment(data = df_arrow,
                  mapping = aes(x = xstart,
                                y = ystart,
                                xend = xend,
                                yend = yend),
                  color = "white",
-                 arrow = arrow(length = unit(0.05, "npc")),
+                 arrow = arrow(length = unit(0.03, "npc")),
                  show.legend = FALSE,
-                 size = 1.5) +
+                 size = 1) +
     ggtitle(cur_name) +
     labs(x = "Local View", y = "") +
     dark_theme_gray() +
     theme(axis.text = element_blank(),
           axis.ticks = element_blank(),
-          axis.title = element_text(size = 20),
-          title = element_text(size = 18))
+          axis.title = element_text(size = 10),
+          title = element_text(size = 9))
   g
   res <- list(g = g, overlap_gname = ovlp_g)
   return(res)
@@ -330,5 +330,18 @@ ind_local <- which(terms_local_name == "mRNA splicing, via spliceosome")
 g3 <- show.term.local(ind_local)$g
 ind_global <- which(terms_global_name == "mRNA splicing, via spliceosome")
 g4 <- show.term.global(ind_global)$g
-gridExtra::grid.arrange(grobs = list(g1, g2, g3, g4), nrow=1)
+figure_7B <- gridExtra::grid.arrange(grobs = list(g1, g2, g3, g4), nrow=1)
 
+figure_7B
+
+outdir <- "./Celegans/figures/"
+
+ggsave(file.path(outdir, "Figure_7A.svg"),
+       plot = figure_7A,
+       width = 7, height = 7,
+       units = "in", dpi = 600, bg = "black")
+
+ggsave(file.path(outdir, "Figure_7B.svg"),
+       plot = figure_7B,
+       width = 12, height = 3.5,
+       units = "in", dpi = 600, bg = "black")

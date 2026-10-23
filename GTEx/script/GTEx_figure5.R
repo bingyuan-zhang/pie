@@ -2,19 +2,19 @@ library(readr)
 library(dplyr)
 library(stringr)
 
-source("./R/functions.R")
-
+source("./Rscript/functions.R")
 exp    <- readRDS("./GTEx/results/GTEx_expr.rds")
 terms  <- readRDS("./GTEx/results/enriched_terms.rds")
 mapped <- readRDS("./GTEx/results/mapped_genes.rds")
 term_by_intv <- readRDS("./GTEx/results//term_intv.rds")
 gsets <- fgsea::gmtPathways("./GTEx/data/GO_Biological_Process_2023.txt")
 
-# GO terms
-terms_pd    <- terms$pd
-terms_pval  <- terms$pval
-terms_egene <- terms$egene
-terms_name  <- terms$name %>%
+## Enriched GO terms
+terms_pd    <- terms$pd # projected direction (coordinates) of the eigengene
+terms_pval  <- terms$pval # p-value of the GSEA test
+terms_padj  <- terms$padj # adjusted p-value of the GSEA test
+terms_egene <- terms$egene # eigengene vector with length n
+terms_name  <- terms$name %>% # name of the GO term
   strsplit(split = "\\(") %>%
   map_vec(~ head(.x, 1)) %>%
   str_remove("\\)") %>%
@@ -53,10 +53,11 @@ true_f  = terms$name
 
 ## figure 5a
 ov <- lapply(glist, function(x) sum(x%in% mapped$select)) %>% unlist
-ov; length(mapped$select) - sum(ov)
+n_genes <- ov; n_others <- length(mapped$select) - sum(ov)
+n_genes; n_others
 data <- data.frame(
   tsgenes = c("Others", "Brain", "Muscle", "Esophagus", "Skin", "Adipose"),
-  number = c(310, 215, 151, 109, 102, 21),
+  number = c(n_others, as.numeric(n_genes)),
   color = c("grey90", "#00C094", "#A58AFF", "#00B6EB", "#FB61D7", "#F8766D")
 )
 
@@ -84,19 +85,19 @@ figure_5a
 
 ## figure_5b
 find.pvals <- function(hpa){
-  phes <- mapped$select
+  pie <- mapped$select
   background <- colnames(exp)
   hpa_cond <- background %in% hpa
-  phes_cond <- background %in% phes
+  pie_cond <- background %in% pie
 
-  a <- (hpa_cond & phes_cond) %>% sum
-  b <- (hpa_cond & !phes_cond) %>% sum()
-  c <- (!hpa_cond & phes_cond) %>% sum()
-  d <- (!hpa_cond & !phes_cond) %>% sum()
+  a <- (hpa_cond & pie_cond) %>% sum
+  b <- (hpa_cond & !pie_cond) %>% sum()
+  c <- (!hpa_cond & pie_cond) %>% sum()
+  d <- (!hpa_cond & !pie_cond) %>% sum()
 
   test_mat <- matrix(c(a,b,c,d), nrow=2)
   colnames(test_mat) <- c("is.hpa", "isnot.hpa")
-  rownames(test_mat) <- c("is.phes.mapped", "isnot.phes.mapped")
+  rownames(test_mat) <- c("is.pie.mapped", "isnot.pie.mapped")
   fisher_res <- fisher.test(test_mat)
   fisher_res$p.value
 }
@@ -213,13 +214,31 @@ niter <- 10
 spsample_vec <- c(0.2, 0.4, 0.6, 0.8)
 result_gmat <- array(dim=c(4, 10))
 result_fmat <- array(dim=c(4, 10))
+gexpr <- readRDS(, file = "./GTEx/results/GTEx_expr.rds")
+
+split_sample <- function(gexpr, prop) {
+  ind <- sample(nrow(gexpr), size = prop* nrow(gexpr), replace = FALSE)
+  # submatrix
+  gexpr_new <- gexpr[ind, ]
+  pca_res <- RSpectra::svds(gexpr_new, k = 30)
+  pcs_res <- pca_res$u %*% diag(pca_res$d)
+  
+  # obtain new UMAP embedding
+  res_umap <- uwot::umap(pcs_res,
+                         n_components = 2,
+                         n_neighbors = 15,
+                         min_dist = 0.5,
+                         seed = 123)
+  emb_umap_new <- scale(res_umap, center = TRUE, scale = FALSE)
+  list(exp = gexpr_new, emb = emb_umap_new)
+}
 
 set.seed(2024)
 for(j in seq_along(spsample_vec)) {
   for (iter in 1:niter) {
     print(paste0(j, " ", iter))
     prop = spsample_vec[j]
-    split_inputs = split_sample(inputs, prop)
+    split_inputs = split_sample(gexpr, prop)
 
     mapped = MapGenes(split_inputs)
 
@@ -334,3 +353,24 @@ figure_5e <-
   )
 
 figure_5e
+
+
+ggsave("./GTEx/figures/Figure_5A.svg",
+       plot = figure_5a, width = 5.0, height = 3.5,
+       units = "in", device = svglite::svglite, bg = "white")
+
+ggsave("./GTEx/figures/Figure_5B.svg",
+       plot = figure_5b, width = 4.5, height = 3.5,
+       units = "in", device = svglite::svglite, bg = "white")
+
+ggsave("./GTEx/figures/Figure_5C.svg",
+       plot = figure_5c, width = 9.0, height = 2.8,
+       units = "in", device = svglite::svglite, bg = "white")
+
+ggsave("./GTEx/figures/Figure_5D.svg",
+       plot = figure_5d, width = 4.5, height = 4.0,
+       units = "in", device = svglite::svglite, bg = "white")
+
+ggsave("./GTEx/figures/Figure_5E.svg",
+       plot = figure_5e, width = 4.5, height = 4.0,
+       units = "in", device = svglite::svglite, bg = "white")
